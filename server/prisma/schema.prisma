@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trips         Trip[]
+  wishlistItems WishlistItem[]
+  visitedPlaces VisitedPlace[]
+}
+
+model Trip {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  destination String
+  country     String
+  startDate   DateTime
+  endDate     DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  highlights    Highlight[]
+  visitedPlaces VisitedPlace[]
+}
+
+model Highlight {
+  id         String    @id @default(cuid())
+  trip       Trip      @relation(fields: [tripId], references: [id])
+  tripId     String
+  title      String
+  caption    String?
+  photos     String    @default("[]") // JSON stringified list
+  occurredAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model VisitedPlace {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  trip      Trip?     @relation(fields: [tripId], references: [id])
+  tripId    String?
+  name      String
+  latitude  Float
+  longitude Float
+  city      String
+  country   String
+  visitDate DateTime?
+  photos    String    @default("[]")
+  caption   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model WishlistItem {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  destination String
+  country     String?
+  tags        String   @default("[]")
+  visited     Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
