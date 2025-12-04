@@ -69,6 +69,14 @@ The Vite-powered web experience mirrors the mobile flows so you can open everyth
 
 The web client reuses the backend contracts—login/signup, trips, wishlist, planner, advisor, and profile stats—implemented with React Router, Zustand, and Axios.
 
+### GitHub Pages Deployment
+
+The `.github/workflows/deploy-pages.yml` workflow builds `/web` and deploys the `dist/` output to GitHub Pages using the Actions-powered pipeline.
+
+1. In GitHub, open **Settings → Pages** and choose **GitHub Actions** as the source (only needs to be done once).
+2. Push to `main` (or trigger the workflow manually) and wait for the "Deploy Web to GitHub Pages" workflow to finish.
+3. The static site becomes available at `https://jakeglickman1.github.io/Travel-Advisor-Trip-Memories/`. The Vite config automatically uses the correct base path when running inside GitHub Actions, so local development still serves from `/`.
+
 ## Mobile (`/mobile`)
 
 Configure the backend URL via Expo's public env var:
