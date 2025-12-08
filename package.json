@@ -2,6 +2,9 @@
   "name": "deal-scout",
   "version": "1.0.0",
   "description": "Web dashboard for scraping Amazon and fashion outlets for resale-ready deals",
+  "bin": {
+    "amazon-proxy-scraper": "bin/amazon-proxy-scraper.js"
+  },
   "main": "server.js",
   "scripts": {
     "dev": "node server.js"
