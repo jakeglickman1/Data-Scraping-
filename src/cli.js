@@ -8,6 +8,7 @@ const { saveResults } = require('./output');
  * The commands mirror the OSS Amazon Proxy Scraper so existing workflows work.
  */
 async function run() {
+  // yargs wires the CLI flags to the scraper options (mirrors upstream tool)
   const argv = yargs(hideBin(process.argv))
     .scriptName('amazon-proxy-scraper')
     .usage('$0 -k "<keyword>" -a "<apiKey>" [options]')
@@ -77,6 +78,7 @@ async function run() {
     ).argv;
 
   try {
+    // Kick off the scrape with parsed CLI options
     const products = await scrapeProducts({
       keyword: argv.keyword,
       apiKey: argv.apiKey,
@@ -91,7 +93,7 @@ async function run() {
     });
 
     console.log(`Total scraped products count: ${products.length}`);
-    console.dir(products, { depth: null, maxArrayLength: null });
+    console.dir(products, { depth: null, maxArrayLength: null }); // verbose inspect for debugging
 
     if (argv.save && products.length) {
       const savedPath = await saveResults(products, argv.keyword, argv.fileType);

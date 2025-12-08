@@ -11,6 +11,7 @@ async function saveResults(records, keyword, fileType = 'csv', directory = proce
     throw new Error('No products to save');
   }
 
+  // Build a deterministic filename so repeated runs are easy to find
   const safeKeyword = sanitizeKeyword(keyword);
   const extension = fileType === 'xls' ? 'xls' : 'csv';
   const filename = `${safeKeyword}_products_${Date.now()}.${extension}`;
@@ -22,7 +23,7 @@ async function saveResults(records, keyword, fileType = 'csv', directory = proce
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
     XLSX.writeFile(workbook, filePath);
   } else {
-    const parser = new Parser();
+    const parser = new Parser(); // json2csv handles CSV quoting/escaping
     const csv = parser.parse(records);
     await fs.writeFile(filePath, csv, 'utf8');
   }

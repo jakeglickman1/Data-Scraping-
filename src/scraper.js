@@ -52,6 +52,7 @@ async function scrapeProducts(options) {
     throw new Error('No products were parsed from the Amazon response');
   }
 
+  // Decide if we need to visit detail pages or stick with search-card data only
   const includeDetails = !options.skipDetails;
   const enriched = includeDetails
     ? await enrichWithDetails(collected, {
@@ -176,6 +177,7 @@ async function enrichWithDetails(products, options) {
     bar.start(products.length, 0);
   }
 
+  // Respect concurrency limits so we don't overload ScrapingAnt
   const enriched = await Promise.all(
     products.map((product) =>
       limit(async () => {

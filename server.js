@@ -8,6 +8,7 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 const MIN_ROI = 0.2;
 const PORT = process.env.PORT || 3000;
 
+// Each source definition points to an upstream feed and parser
 const SOURCES = [
   {
     id: 'amazon-tech',
@@ -47,6 +48,7 @@ const SOURCES = [
 ];
 
 const app = express();
+// Basic middleware stack for a simple API + static site
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -90,6 +92,7 @@ app.listen(PORT, () => {
 });
 
 async function fetchSourcePayload(source) {
+  // Browser-like headers keep HTML scrapes from getting blocked as bots
   const headers =
     source.format === 'json'
       ? { Accept: 'application/json' }
@@ -108,6 +111,8 @@ async function fetchSourcePayload(source) {
 
   return source.format === 'json' ? response.json() : response.text();
 }
+
+// --- Parsers: convert raw HTML/JSON payloads into normalized deal objects ---
 
 function parseAmazonResults(html, source) {
   const $ = cheerio.load(html);
