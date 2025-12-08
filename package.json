@@ -1,0 +1,15 @@
+{
+  "name": "deal-scout",
+  "version": "1.0.0",
+  "description": "Web dashboard for scraping Amazon and fashion outlets for resale-ready deals",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0-rc.12",
+    "cors": "2.8.5",
+    "express": "^4.22.1",
+    "node-fetch": "3.3.2"
+  }
+}

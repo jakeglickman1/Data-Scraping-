@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deal Scout · Resell Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <div>
+        <p class="eyebrow">Deal Scout</p>
+        <h1>Track live deals that clear a 20% ROI.</h1>
+        <p>
+          We scrape Amazon and leading fashion outlets for clearance drops, compare strike-through pricing, and
+          surface flips that cross your profit threshold.
+        </p>
+      </div>
+      <form id="filters" class="filters">
+        <label>
+          Minimum ROI (%)
+          <input type="number" step="5" id="roiInput" value="20" min="5" max="90" />
+        </label>
+        <label>
+          Keyword
+          <input type="text" id="keywordInput" placeholder="e.g., jacket, GPU" />
+        </label>
+        <button type="submit">Refresh Deals</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    <section class="status">
+      <div>
+        <p class="status__label">Last updated</p>
+        <p id="updatedAt">—</p>
+      </div>
+      <div>
+        <p class="status__label">Deals passing filter</p>
+        <p id="dealCount">0</p>
+      </div>
+    </section>
+
+    <section id="dealGrid" class="grid"></section>
+  </main>
+
+  <template id="dealCardTemplate">
+    <article class="deal" data-source="">
+      <div class="deal__header">
+        <p class="deal__source"></p>
+        <span class="deal__roi"></span>
+      </div>
+      <h2 class="deal__title"></h2>
+      <p class="deal__pricing">
+        <span class="deal__price"></span>
+        <span class="deal__original"></span>
+      </p>
+      <p class="deal__profit"></p>
+      <a class="deal__link" target="_blank" rel="noopener"></a>
+    </article>
+  </template>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
