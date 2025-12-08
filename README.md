@@ -10,6 +10,12 @@ This project mirrors the open-source Amazon Proxy Scraper experience with a self
 - Saves results as CSV or XLS files named after the keyword (e.g., `iphone_products_1702062339000.csv`).
 - Progress bar available for long-running detail fetches via `--show-progress`.
 
+### Project structure
+
+- `bin/` &mdash; tiny shim (`amazon-proxy-scraper.js`) that npm links when you run `npx amazon-proxy-scraper`.
+- `src/` &mdash; all CLI logic: argument parsing (`cli.js`), scraping (`scraper.js`), and CSV/XLS export helpers (`output.js`).
+- `server.js` & `public/` &mdash; lightweight Express server and static dashboard that visualize scraped deals inside a browser.
+
 ### Requirements
 
 1. Node.js 18+
