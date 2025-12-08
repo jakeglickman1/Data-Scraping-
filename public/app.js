@@ -1,3 +1,4 @@
+// Cache DOM references up front for reuse throughout the UI lifecycle
 const dealGrid = document.getElementById('dealGrid');
 const updatedAtEl = document.getElementById('updatedAt');
 const dealCountEl = document.getElementById('dealCount');
@@ -6,12 +7,14 @@ const roiInput = document.getElementById('roiInput');
 const keywordInput = document.getElementById('keywordInput');
 const template = document.getElementById('dealCardTemplate');
 
+// Refresh deals whenever the user tweaks filters and submits the form
 filters.addEventListener('submit', (event) => {
   event.preventDefault();
   loadDeals();
 });
 
 async function loadDeals() {
+  // Translate form state into API parameters and show a loading message
   const minRoi = Number(roiInput.value || 20) / 100;
   const keyword = keywordInput.value.trim().toLowerCase();
   const url = new URL('/api/deals', window.location.origin);
@@ -24,9 +27,10 @@ async function loadDeals() {
     if (!response.ok) {
       throw new Error('Request failed');
     }
-    const payload = await response.json();
+    const payload = await response.json(); // includes deals array plus metadata
     updatedAtEl.textContent = new Date(payload.updatedAt).toLocaleString();
-    const filtered = payload.deals.filter((deal) =>
+    // Client-side keyword filtering happens here so we avoid extra server calls
+   const filtered = payload.deals.filter((deal) =>
       keyword ? deal.title.toLowerCase().includes(keyword) : true
     );
     dealCountEl.textContent = filtered.length;
@@ -42,6 +46,7 @@ function renderDeals(deals) {
     return;
   }
 
+  // Clone the HTML template for each deal and populate its dynamic fields
   const fragment = document.createDocumentFragment();
   deals.forEach((deal) => {
     const card = template.content.firstElementChild.cloneNode(true);
@@ -61,4 +66,5 @@ function renderDeals(deals) {
   dealGrid.appendChild(fragment);
 }
 
+// Kick off the initial fetch as soon as the page loads
 loadDeals();
