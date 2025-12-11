@@ -6,6 +6,7 @@ const {
 
 const DEFAULT_SOURCE = 'amazon-search';
 
+// Central registry of every site/feed the CLI knows how to scrape.
 const SOURCE_DEFINITIONS = [
   {
     id: 'amazon-search',
@@ -52,6 +53,7 @@ const SOURCE_DEFINITIONS = [
 ];
 
 function listSources() {
+  // Shallow copy defends against accidental mutation by callers.
   return SOURCE_DEFINITIONS.slice();
 }
 

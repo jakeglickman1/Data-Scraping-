@@ -24,10 +24,12 @@ async function scrapeProducts(options) {
     throw new Error(`Unknown source "${sourceId}". Available sources: ${choices}`);
   }
 
+  // amazon-search behaves differently (pagination + optional detail fetches).
   if (source.type === 'amazon-search') {
     return scrapeAmazonKeywordSearch(options);
   }
 
+  // All other sources share the "single URL + parser" contract.
   return scrapePredefinedSource(source, options);
 }
 
@@ -47,6 +49,7 @@ async function scrapeAmazonKeywordSearch(options) {
   const collected = [];
   let page = 1;
 
+  // Crawl successive SERP pages until we reach the requested count or max pages.
   while (collected.length < target && page <= MAX_PAGES) {
     const searchUrl = buildAmazonSearchUrl(keyword, host, page);
     const html = await fetchHtml(searchUrl, apiKey, options.country);
@@ -70,6 +73,7 @@ async function scrapeAmazonKeywordSearch(options) {
     throw new Error('No products were parsed from the Amazon response');
   }
 
+  // Detail pages dramatically improve fidelity but are optional for faster runs.
   const includeDetails = !options.skipDetails;
   const enriched = includeDetails
     ? await enrichWithDetails(collected, {
@@ -101,6 +105,7 @@ async function scrapePredefinedSource(source, options) {
     throw new Error(`Keyword is required for the ${source.id} source`);
   }
 
+  // HTML endpoints go through ScrapingAnt; JSON feeds are hit directly.
   if (source.type === 'html' && !apiKey) {
     throw new Error('ScrapingAnt API key is required to scrape HTML sources');
   }
@@ -113,6 +118,7 @@ async function scrapePredefinedSource(source, options) {
     throw new Error(`Source "${source.id}" does not specify a URL to scrape`);
   }
 
+  // Fetch the upstream payload before handing it off to the parser.
   const payload =
     source.type === 'json'
       ? await fetchJson(resolvedUrl)
@@ -123,6 +129,7 @@ async function scrapePredefinedSource(source, options) {
     throw new Error(`No products were parsed from ${source.label}`);
   }
 
+  // Normalize each site-specific record so downstream code only deals with one shape.
   return parsed.slice(0, target).map((record) =>
     formatProductRecord({
       asin: record.id || record.asin || '',
@@ -152,27 +159,46 @@ async function fetchHtml(targetUrl, apiKey, proxyCountry) {
   const url = new URL('https://api.scrapingant.com/v2/general');
   url.searchParams.set('x-api-key', apiKey);
   url.searchParams.set('url', targetUrl);
-  url.searchParams.set('browser', 'full');
+  // ScrapingAnt defaults to a headless Chrome session; we only set device hints.
   url.searchParams.set('device', 'desktop');
   if (proxyCountry) {
     url.searchParams.set('proxy_country', proxyCountry);
   }
 
+  // ScrapingAnt expects URL + key in query params; device hint keeps eBay happy.
   const response = await fetch(url.toString());
+  const rawBody = await response.text();
 
   if (!response.ok) {
-    throw new Error(`ScrapingAnt request failed with status ${response.status}`);
+    const snippet = rawBody.length > 200 ? `${rawBody.slice(0, 200)}…` : rawBody;
+    throw new Error(`ScrapingAnt request failed with status ${response.status}${snippet ? `: ${snippet}` : ''}`);
   }
 
-  const payload = await response.json();
-  if (!payload || typeof payload.content !== 'string') {
-    throw new Error('Unexpected response structure from ScrapingAnt');
+  const trimmed = rawBody.trim();
+  if (!trimmed) {
+    throw new Error('ScrapingAnt returned an empty response body');
   }
 
-  return payload.content;
+  // ScrapingAnt sometimes returns JSON ({ content: "<html>" }) and sometimes raw HTML.
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const payload = JSON.parse(trimmed);
+      if (payload && typeof payload.content === 'string') {
+        return payload.content;
+      }
+      if (typeof payload === 'string') {
+        return payload;
+      }
+    } catch {
+      // fall through and treat as raw HTML
+    }
+  }
+
+  return rawBody;
 }
 
 async function fetchJson(targetUrl) {
+  // Direct fetch helper used for trusted JSON feeds (no proxy required).
   const response = await fetch(targetUrl);
   if (!response.ok) {
     throw new Error(`JSON request failed with status ${response.status}`);

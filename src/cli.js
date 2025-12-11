@@ -9,6 +9,7 @@ const { listSources, DEFAULT_SOURCE } = require('./sources');
  * The commands mirror the OSS Amazon Proxy Scraper so existing workflows work.
  */
 async function run() {
+  // The CLI is aware of every registered scraping source so we can expose them as --source choices.
   const availableSources = listSources();
   const sourceChoices = availableSources.map((source) => source.id);
 
@@ -104,10 +105,12 @@ async function run() {
       source: argv.source,
     });
 
+    // Print a verbose dump so it's obvious what was scraped even without saving.
     console.log(`Total scraped products count: ${products.length}`);
     console.dir(products, { depth: null, maxArrayLength: null }); // verbose inspect for debugging
 
     if (argv.save && products.length) {
+      // Persist results (CSV/XLS) using the helper so all formats go through one path.
       const savedPath = await saveResults(products, argv.keyword, argv.fileType);
       console.log(`Saved ${products.length} products to ${savedPath}`);
     }

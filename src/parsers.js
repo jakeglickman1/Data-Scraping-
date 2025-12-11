@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
  */
 
 function parseAmazonResults(html, source = {}) {
+  // Amazon SERPs share enough structure that this parser works for both CLI and server.
   const $ = cheerio.load(html);
   const results = [];
 
@@ -44,6 +45,7 @@ function parseAmazonResults(html, source = {}) {
 }
 
 function parseFashionGrid(html, source = {}) {
+  // Generic parser for boutique/fashion grids that follow a simple tile layout.
   const $ = cheerio.load(html);
   const results = [];
 
@@ -77,6 +79,7 @@ function parseFashionGrid(html, source = {}) {
 }
 
 function parseEbayDeals(html, source = {}) {
+  // eBay Daily Deals exposes stable data-testid hooks we can target here.
   const $ = cheerio.load(html);
   const results = [];
 
@@ -103,6 +106,7 @@ function parseEbayDeals(html, source = {}) {
 }
 
 function parseDummyJsonProducts(data, source = {}) {
+  // DummyJSON gives us predictable JSON for demos/tests, so no HTML parsing required.
   if (!data || !Array.isArray(data.products)) return [];
   return data.products
     .map((product) => {
@@ -127,6 +131,7 @@ function parseDummyJsonProducts(data, source = {}) {
 }
 
 function parsePriceString(value = '') {
+  // Strip everything except numbers/decimal separator so "$12.34" -> 12.34.
   const numeric = value.replace(/[^0-9.]/g, '');
   return numeric ? parseFloat(numeric) : null;
 }

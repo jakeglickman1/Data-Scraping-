@@ -18,6 +18,7 @@ async function saveResults(records, keyword, fileType = 'csv', directory = proce
   const filePath = path.join(directory, filename);
 
   if (extension === 'xls') {
+    // XLSX handles in-memory workbook creation so Excel opens without errors.
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(records);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
@@ -35,6 +36,7 @@ async function saveResults(records, keyword, fileType = 'csv', directory = proce
  * Produce filesystem-safe filenames derived from the keyword (amazon_*.csv).
  */
 function sanitizeKeyword(keyword = '') {
+  // Lowercase + underscores keep filenames portable across filesystems.
   const normalized = keyword.toLowerCase().replace(/[^a-z0-9]+/g, '_');
   const trimmed = normalized.replace(/^_+|_+$/g, '');
   return trimmed || 'amazon';
