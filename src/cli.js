@@ -2,12 +2,16 @@ const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const { scrapeProducts } = require('./scraper');
 const { saveResults } = require('./output');
+const { listSources, DEFAULT_SOURCE } = require('./sources');
 
 /**
  * Configure yargs-powered CLI, trigger a scrape, and optionally save the output.
  * The commands mirror the OSS Amazon Proxy Scraper so existing workflows work.
  */
 async function run() {
+  const availableSources = listSources();
+  const sourceChoices = availableSources.map((source) => source.id);
+
   // yargs wires the CLI flags to the scraper options (mirrors upstream tool)
   const argv = yargs(hideBin(process.argv))
     .scriptName('amazon-proxy-scraper')
@@ -16,13 +20,20 @@ async function run() {
       alias: 'k',
       type: 'string',
       describe: "Amazon search keyword (e.g., 'baking mat')",
-      demandOption: true,
+      demandOption: false,
     })
     .option('apiKey', {
       alias: 'a',
       type: 'string',
       describe: 'ScrapingAnt API key (https://app.scrapingant.com/)',
       demandOption: true,
+    })
+    .option('source', {
+      alias: 'S',
+      type: 'string',
+      default: DEFAULT_SOURCE,
+      choices: sourceChoices,
+      describe: 'Predefined site/source to scrape (amazon-search, ebay-deals, etc.)',
     })
     .option('number', {
       alias: 'n',
@@ -90,6 +101,7 @@ async function run() {
       showProgress: argv.showProgress,
       skipDetails: argv.skipDetails,
       concurrency: argv.concurrency,
+      source: argv.source,
     });
 
     console.log(`Total scraped products count: ${products.length}`);

@@ -1,6 +1,7 @@
 const cheerio = require('cheerio');
 const cliProgress = require('cli-progress');
 const pLimit = require('p-limit');
+const { getSourceDefinition, listSources, DEFAULT_SOURCE } = require('./sources');
 
 // Lazy-load node-fetch so CLI startup remains snappy.
 const fetch = (...args) => import('node-fetch').then(({ default: fetchFn }) => fetchFn(...args));
@@ -13,12 +14,30 @@ const MAX_PAGES = 20;
  * Handles pagination, optional detail-page enrichment, and record formatting.
  */
 async function scrapeProducts(options) {
+  const sourceId = (options.source || DEFAULT_SOURCE).trim() || DEFAULT_SOURCE;
+  const source = getSourceDefinition(sourceId);
+
+  if (!source) {
+    const choices = listSources()
+      .map((entry) => entry.id)
+      .join(', ');
+    throw new Error(`Unknown source "${sourceId}". Available sources: ${choices}`);
+  }
+
+  if (source.type === 'amazon-search') {
+    return scrapeAmazonKeywordSearch(options);
+  }
+
+  return scrapePredefinedSource(source, options);
+}
+
+async function scrapeAmazonKeywordSearch(options) {
   const keyword = (options.keyword || '').trim();
   const apiKey = (options.apiKey || '').trim();
   const host = (options.host || 'amazon.com').trim() || 'amazon.com';
 
   if (!keyword) {
-    throw new Error('Keyword is required');
+    throw new Error('Keyword is required for the amazon-search source');
   }
   if (!apiKey) {
     throw new Error('ScrapingAnt API key is required');
@@ -28,7 +47,6 @@ async function scrapeProducts(options) {
   const collected = [];
   let page = 1;
 
-  // Paginate over Amazon search results until we reach the target count.
   while (collected.length < target && page <= MAX_PAGES) {
     const searchUrl = buildAmazonSearchUrl(keyword, host, page);
     const html = await fetchHtml(searchUrl, apiKey, options.country);
@@ -52,7 +70,6 @@ async function scrapeProducts(options) {
     throw new Error('No products were parsed from the Amazon response');
   }
 
-  // Decide if we need to visit detail pages or stick with search-card data only
   const includeDetails = !options.skipDetails;
   const enriched = includeDetails
     ? await enrichWithDetails(collected, {
@@ -68,7 +85,64 @@ async function scrapeProducts(options) {
         highResImage: product.highResImage || product.thumbnail,
       }));
 
-  return enriched.map(formatProductRecord);
+  return enriched.map((product) =>
+    formatProductRecord({
+      ...product,
+      source: 'Amazon keyword search',
+    })
+  );
+}
+
+async function scrapePredefinedSource(source, options) {
+  const apiKey = (options.apiKey || '').trim();
+  const keyword = (options.keyword || '').trim();
+
+  if (source.requiresKeyword && !keyword) {
+    throw new Error(`Keyword is required for the ${source.id} source`);
+  }
+
+  if (source.type === 'html' && !apiKey) {
+    throw new Error('ScrapingAnt API key is required to scrape HTML sources');
+  }
+
+  const target = clampNumber(options.number ?? 10, 1, MAX_PRODUCTS);
+  const resolvedUrl =
+    typeof source.buildUrl === 'function' ? source.buildUrl({ keyword }) : source.url;
+
+  if (!resolvedUrl) {
+    throw new Error(`Source "${source.id}" does not specify a URL to scrape`);
+  }
+
+  const payload =
+    source.type === 'json'
+      ? await fetchJson(resolvedUrl)
+      : await fetchHtml(resolvedUrl, apiKey, options.country);
+
+  const parsed = source.parser(payload, source) || [];
+  if (!parsed.length) {
+    throw new Error(`No products were parsed from ${source.label}`);
+  }
+
+  return parsed.slice(0, target).map((record) =>
+    formatProductRecord({
+      asin: record.id || record.asin || '',
+      title: record.title,
+      url: record.url,
+      price: record.price,
+      beforeDiscount: record.originalPrice,
+      rating: record.rating,
+      reviewsCount: record.reviewsCount,
+      thumbnail: record.thumbnail || '',
+      highResImage: record.highResImage || record.thumbnail || '',
+      shortDescription: record.shortDescription || '',
+      fullDescription: record.fullDescription || '',
+      isSponsored: Boolean(record.isSponsored),
+      isAmazonChoice: Boolean(record.isAmazonChoice),
+      isDiscounted:
+        record.originalPrice && record.price ? record.originalPrice > record.price : false,
+      source: record.source || source.label,
+    })
+  );
 }
 
 /**
@@ -96,6 +170,14 @@ async function fetchHtml(targetUrl, apiKey, proxyCountry) {
   }
 
   return payload.content;
+}
+
+async function fetchJson(targetUrl) {
+  const response = await fetch(targetUrl);
+  if (!response.ok) {
+    throw new Error(`JSON request failed with status ${response.status}`);
+  }
+  return response.json();
 }
 
 /**
@@ -260,6 +342,7 @@ function formatProductRecord(product) {
     thumbnail: product.thumbnail,
     'high-res-image': product.highResImage || product.thumbnail,
     url: product.url,
+    source: product.source || '',
     'is-discounted': Boolean(product.isDiscounted),
     'is-sponsored': Boolean(product.isSponsored),
     'is-amazon-choice': Boolean(product.isAmazonChoice),

@@ -38,14 +38,18 @@ npx amazon-proxy-scraper --help
 ```bash
 amazon-proxy-scraper -k "baking mat" -a "<apiKey>" -n 100 -t csv \
   --country us --host amazon.com --show-progress
+
+# Scrape a predefined source (no keyword needed)
+amazon-proxy-scraper -a "<apiKey>" --source ebay-deals -n 50
 ```
 
 Key options (all match the open-source reference implementation):
 
 | Option | Alias | Default | Description |
 | --- | --- | --- | --- |
-| `--keyword` | `-k` | _required_ | Search phrase used on Amazon |
+| `--keyword` | `-k` | _required for `amazon-search`_ | Search phrase used on Amazon |
 | `--apiKey` | `-a` | _required_ | ScrapingAnt API key |
+| `--source` | `-S` | `amazon-search` | Predefined site to scrape (`amazon-search`, `amazon-tech`, `amazon-fashion`, `ebay-deals`, `fashion-api-mens`, `fashion-api-womens`) |
 | `--number` | `-n` | `10` | Number of products to scrape (max `500`) |
 | `--save` | `-s` | `true` | Write results to disk |
 | `--fileType` | `-t` | `csv` | Either `csv` or `xls` |
@@ -54,6 +58,13 @@ Key options (all match the open-source reference implementation):
 | `--skipDetails` | — | `false` | Skip per-product detail page fetches |
 | `--concurrency` | — | `5` | Concurrent detail requests (1-10) |
 | `--showProgress` | — | `false` | Display a CLI progress bar |
+
+Available `--source` presets:
+
+- `amazon-search` – keyword-driven SERP scrape (default, supports detail enrichment)
+- `amazon-tech` / `amazon-fashion` – fixed Amazon deal feeds powered by curated keywords
+- `ebay-deals` – pulls the eBay Daily Deals grid
+- `fashion-api-mens` / `fashion-api-womens` – sample JSON feeds from DummyJSON for quick testing
 
 Example outputs follow the structure below:
 
@@ -65,6 +76,7 @@ Example outputs follow the structure below:
     "thumbnail": "https://m.media-amazon.com/images/I/71RnXV6i+PL._AC_UL320_.jpg",
     "high-res-image": "https://m.media-amazon.com/images/I/71RnXV6i+PL.jpg",
     "url": "https://amazon.com/dp/B07MK2P53L",
+    "source": "Amazon keyword search",
     "is-discounted": true,
     "is-sponsored": false,
     "is-amazon-choice": false,
