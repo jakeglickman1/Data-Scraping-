@@ -59,6 +59,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/deals', async (req, res) => {
   const minRoi = Number(req.query.minRoi) || MIN_ROI;
+  // Schedule fetch + parse for every upstream feed in parallel
   const dealPromises = SOURCES.map(async (source) => {
     try {
       const payload = await fetchSourcePayload(source);
@@ -81,6 +82,7 @@ app.get('/api/deals', async (req, res) => {
     }
   });
 
+  // Flatten nested arrays into a single sortable collection
   const deals = (await Promise.all(dealPromises)).flat();
   deals.sort((a, b) => b.roi - a.roi);
   res.json({

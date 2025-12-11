@@ -1,3 +1,4 @@
+# Ignore editor/OS files and local build artifacts so the repo stays clean
 .DS_Store
 node_modules/
 .expo/

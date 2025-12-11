@@ -1,44 +1,44 @@
-name: Deploy Web to GitHub Pages
+name: Deploy Web to GitHub Pages # High-level label shown in the Actions tab
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main] # Ship whenever the main branch updates
+  workflow_dispatch: # Manual trigger for quick redeploys
 
 permissions:
   contents: read
   pages: write
-  id-token: write
+  id-token: write # Required for the deploy-pages action's OIDC auth
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: true # Don't overlap deployments; cancel stale runs
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # Pull repository contents
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: web/package-lock.json # Speed up installs
 
       - name: Install dependencies
         working-directory: web
-        run: npm ci
+        run: npm ci # Clean install for deterministic builds
 
       - name: Build web app
         working-directory: web
-        run: npm run build
+        run: npm run build # Emit the static site to web/dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web/dist
+          path: web/dist # Publish bundle for the deploy job
 
   deploy:
     environment:

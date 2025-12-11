@@ -30,7 +30,7 @@ async function loadDeals() {
     const payload = await response.json(); // includes deals array plus metadata
     updatedAtEl.textContent = new Date(payload.updatedAt).toLocaleString();
     // Client-side keyword filtering happens here so we avoid extra server calls
-   const filtered = payload.deals.filter((deal) =>
+    const filtered = payload.deals.filter((deal) =>
       keyword ? deal.title.toLowerCase().includes(keyword) : true
     );
     dealCountEl.textContent = filtered.length;
